@@ -4,7 +4,7 @@
 ### Download Code
 1. Click the green "Code" button
 1. Download ZIP
-1. You neeed the data files
+1. You need the data files
 
 ### Install Python and Run
 1. `pip install -r requirements.txt`
