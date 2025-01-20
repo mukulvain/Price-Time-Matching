@@ -1,5 +1,5 @@
 from Queue import Queue
-from reader import order_repository, orders, trade_price
+from reader import order_repository, orders, trade_price, trades
 
 MARKET_OPENS_AT = 9.25
 
@@ -8,6 +8,7 @@ sell_book = Queue(False)
 buy_book = Queue(True)
 ineligible_orders = []
 stack = []
+
 
 # Adds orders to stack
 def add_to_stack(order, is_buy=True):
@@ -33,90 +34,48 @@ idx = 0
 for order in orders:
     idx += 1
     order_number = order.order_number
-    if order.order_time < MARKET_OPENS_AT:
+    if order.order_time > MARKET_OPENS_AT:
+        break
+    if order_number in order_repository:
         # Removes order
         if order.activity_type == "CANCEL":
-            is_market_order = order.is_market_order
             if order.is_buy:
-                buy_book.delete_PO(order_number, is_market_order)
+                buy_book.remove_PO(order_number)
             else:
-                sell_book.delete_PO(order_number, is_market_order)
-            del order_repository[order_number]
+                sell_book.remove_PO(order_number)
             continue
 
         # Removes order
         if order.activity_type == "MODIFY":
             previous_order = order_repository[order_number]
-            is_market_order = previous_order.is_market_order
-
             if previous_order.is_buy:
-                buy_book.delete_PO(order_number, is_market_order)
+                buy_book.remove_PO(order_number)
             else:
-                sell_book.delete_PO(order_number, is_market_order)
+                sell_book.remove_PO(order_number)
 
-        # Adds order
-        if order.is_buy:
-            buy_book.add_PO(order)
-        else:
-            sell_book.add_PO(order)
-        order_repository[order_number] = order
-    # Break out of the loop when PO time ends
-    else:
-        break
+    # Adds order
+    if order.is_market_order:
+        continue
 
-# Add eligible buy limit orders to stack
-for key in buy_book.PO_limit_orders.keys():
-    order = buy_book.PO_limit_orders[key]
-    if order.limit_price < trade_price:
-        ineligible_orders.append(order)
-    else:
-        add_to_stack(stack, order, True)
-
-# Add eligible sell limit orders to stack
-for key in sell_book.PO_limit_orders.keys():
-    order = sell_book.PO_limit_orders[key]
-    if order.limit_price > trade_price:
-        ineligible_orders.append(order)
-    else:
-        add_to_stack(stack, order, False)
-
-if not len(stack) or stack[-1].is_buy:
-    # Add residual sell market orders to stack
-    for key in sell_book.PO_market_orders.keys():
-        order = sell_book.PO_market_orders[key]
-        add_to_stack(stack, order, False)
-
-    # Add residual buy market orders to stack
-    for key in buy_book.PO_market_orders.keys():
-        order = buy_book.PO_market_orders[key]
-        add_to_stack(stack, order, True)
-else:
-    # Add residual buy market orders to stack
-    for key in buy_book.PO_market_orders.keys():
-        order = buy_book.PO_market_orders[key]
-        add_to_stack(stack, order, True)
-
-    # Add residual sell market orders to stack
-    for key in sell_book.PO_market_orders.keys():
-        order = sell_book.PO_market_orders[key]
-        add_to_stack(stack, order, False)
-
-# Since these orders are final, consider them as entry orders
-for order in ineligible_orders + stack:
-    order.activity_type = "ENTRY"
-
-
-for order in ineligible_orders + stack:
     if order.is_buy:
-        if order.is_market_order:
-            buy_book.grab(order, sell_book)
-        else:
-            buy_book.add(order)
+        buy_book.add_PO(order)
     else:
-        if order.is_market_order:
-            sell_book.grab(order, buy_book)
-        else:
-            sell_book.add(order)
+        sell_book.add_PO(order)
+    order_repository[order_number] = order
+
+
+for trade in trades:
+    if trade.trade_time > MARKET_OPENS_AT:
+        break
+    volume = trade.trade_quantity
+    buyer = trade.buy_order_number
+    seller = trade.sell_order_number
+
+    buy_book.remove_PO(buyer, volume)
+    sell_book.remove_PO(seller, volume)
+
+buy_book.fetch_price()
+sell_book.fetch_price()
 
 for order in orders[idx - 1 :]:
     order_number = order.order_number
@@ -139,12 +98,6 @@ for order in orders[idx - 1 :]:
     # Adds order
     order_repository[order_number] = order
     if order.is_buy:
-        if order.is_stop_loss:
-            buy_book.add_trigger(order)
-        else:
-            buy_book.execute(order, sell_book)
+        buy_book.execute(order, sell_book)
     else:
-        if order.is_stop_loss:
-            sell_book.add_trigger(order)
-        else:
-            sell_book.execute(order, buy_book)
+        sell_book.execute(order, buy_book)
