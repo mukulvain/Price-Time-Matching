@@ -49,3 +49,4 @@ trades = [
 ]
 
 trade_price = trades_df["trd_prc"].iloc[0]
+symbols = ["bbbbbbINFY"]

@@ -6,8 +6,6 @@ MARKET_OPENS_AT = 9.25
 
 sell_book = Queue(False)
 buy_book = Queue(True)
-ineligible_orders = []
-stack = []
 
 idx = 0
 for order in orders:
