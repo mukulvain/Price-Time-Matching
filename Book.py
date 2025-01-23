@@ -1,14 +1,10 @@
-from sortedcontainers import SortedDict
 from reader import order_repository
 
 
 class Book:
     def __init__(self, buy=True):
         self.buy = buy
-        # Mathematical cosmetic
-        self.buy_var = 2 * buy - 1
-
-        self.queue = SortedDict()
+        self.queue = dict()
         self.orders = {}
         self.stop_loss_orders = {}
 
@@ -25,7 +21,10 @@ class Book:
             if order.order_number in self.stop_loss_orders:
                 del self.stop_loss_orders[order.order_number]
                 order.is_stop_loss = False
-                if not order.is_market_order:
+                if order.is_market_order:
+                    del order_repository[order.order_number]
+                else:
+                    order_repository[order.order_number].is_stop_loss = False
                     self.add(order)
             else:
                 self.stop_loss_orders[order.order_number] = order
@@ -40,6 +39,7 @@ class Book:
     def delete(self, order_number, is_stop_loss, volume=0):
         if is_stop_loss:
             del self.stop_loss_orders[order_number]
+            del order_repository[order_number]
 
         # Removes order from queue
         elif order_number in self.orders:

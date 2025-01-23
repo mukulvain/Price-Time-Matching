@@ -1,5 +1,5 @@
 from Queue import Queue
-from reader import order_repository, orders, trade_price, trades
+from reader_rem import order_repository, orders, trade_price, trades
 
 MARKET_OPENS_AT = 9.25
 

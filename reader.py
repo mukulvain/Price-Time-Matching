@@ -1,52 +1,108 @@
-import pandas as pd
 from Order import Order
 from Trade import Trade
 
-orders_file = "OrderFile_bbbbbbINFY.csv"
-trades_file = "TradeFile_bbbbbbINFY.csv"
-orders_df = pd.read_csv(orders_file)
-trades_df = pd.read_csv(trades_file)
 
 order_repository = {}
 
-orders = [
-    Order(
-        row.Record_ind,
-        row.order_no,
-        row.time,
-        row.buysell == "B",
-        row.activity_typ,
-        row.symbol,
-        row.vol_discl,
-        row.vol_orgnl,
-        row.limit_prc,
-        row.trig_prc,
-        row.mkt_ord_flg == "Y",
-        row.stp_loss_flg == "Y",
-        row.ioc_flg == "Y",
-        row.algo_ind,
-        row.client_flg,
-    )
-    for row in orders_df.itertuples(index=False)
+
+class AlphaNumeric:
+    def __init__(self, length):
+        self.value_type = str
+        self.length = length
+
+
+class Numeric:
+    def __init__(self, length):
+        self.value_type = int
+        self.length = length
+
+
+order = [
+    AlphaNumeric(2),
+    AlphaNumeric(4),
+    Numeric(16),
+    Numeric(14),
+    AlphaNumeric(1),
+    Numeric(1),
+    AlphaNumeric(10),
+    AlphaNumeric(2),
+    Numeric(8),
+    Numeric(8),
+    Numeric(8),
+    Numeric(8),
+    AlphaNumeric(1),
+    AlphaNumeric(1),
+    AlphaNumeric(1),
+    AlphaNumeric(1),
+    AlphaNumeric(1),
 ]
 
-trades = [
-    Trade(
-        row.Record_ind,
-        row.trade_no,
-        row.time,
-        row.symbol,
-        row.trd_prc,
-        row.trd_q,
-        row.buy_order_no,
-        row.buy_algo_ind,
-        row.buy_client_flg,
-        row.sell_order_no,
-        row.sell_algo_ind,
-        row.sell_client_flg,
-    )
-    for row in trades_df.itertuples(index=False)
+trade = [
+    AlphaNumeric(2),
+    AlphaNumeric(4),
+    Numeric(16),
+    Numeric(14),
+    AlphaNumeric(10),
+    AlphaNumeric(2),
+    Numeric(8),
+    Numeric(8),
+    Numeric(16),
+    Numeric(1),
+    Numeric(1),
+    Numeric(16),
+    Numeric(1),
+    Numeric(1),
 ]
 
-trade_price = trades_df["trd_prc"].iloc[0]
-symbols = ["bbbbbbINFY"]
+
+def to_order(line):
+    ptr = 0
+    order_args = []
+    for var in order:
+        order_args.append(var.value_type(line[ptr : ptr + var.length]))
+        ptr += var.length
+    return Order(*order_args)
+
+
+def to_trade(line):
+    ptr = 0
+    trade_args = []
+    for var in trade:
+        trade_args.append(var.value_type(line[ptr : ptr + var.length]))
+        ptr += var.length
+    return Trade(*trade_args)
+
+
+orders_file = "CASH_Orders_20082019.DAT"
+trades_file = "CASH_Trades_20082019.DAT"
+
+
+def line_reader(file_path):
+    with open(file_path, "r") as file:
+        for line in file:
+            yield line.strip()
+
+
+order_reader = line_reader(orders_file)
+trade_reader = line_reader(trades_file)
+
+
+def get_trade():
+    try:
+        return to_trade(next(trade_reader))
+    except StopIteration:
+        return None
+
+
+def get_order():
+    try:
+        return to_order(next(order_reader))
+    except StopIteration:
+        return None
+
+def get_symbols():
+    symbols = []
+    with open("symbols.txt", "r", encoding="utf-16") as file:
+        for line in file:
+            symbols.append(line.strip())
+    return symbols

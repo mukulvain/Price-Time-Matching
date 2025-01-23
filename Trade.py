@@ -2,9 +2,11 @@ class Trade:
     def __init__(
         self,
         record,
+        segment,
         trade_number,
         trade_time,
         symbol,
+        series,
         trade_price,
         trade_quantity,
         buy_order_number,
@@ -15,11 +17,11 @@ class Trade:
         sell_client,
     ):
         self.record = record
-        self.segment = "CASH"
+        self.segment = segment
         self.trade_number = trade_number
         self.trade_time = trade_time
         self.symbol = symbol
-        self.series = "EQ"
+        self.series = series
         self.trade_price = trade_price
         self.trade_quantity = trade_quantity
         self.buy_order_number = buy_order_number
