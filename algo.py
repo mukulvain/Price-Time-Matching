@@ -13,9 +13,14 @@ start = time.time()
 order = get_order()
 while True:
     trade = get_trade()
+    if trade.symbol not in symbols:
+        continue
     if trade is None:
         break
     while order and order.order_time < trade.trade_time:
+        if order.symbol not in symbols:
+            order = get_order()
+            continue
         stock = tickers[order.symbol]
         order_number = order.order_number
         if order_number in order_repository:

@@ -1,6 +1,6 @@
 from Order import Order
 from Trade import Trade
-
+import csv
 
 order_repository = {}
 
@@ -75,6 +75,7 @@ def to_trade(line):
 
 orders_file = "CASH_Orders_20082019.DAT"
 trades_file = "CASH_Trades_20082019.DAT"
+symbols_file = "NSE500_2019.csv"
 
 
 def line_reader(file_path):
@@ -102,7 +103,9 @@ def get_order():
 
 def get_symbols():
     symbols = []
-    with open("symbols.txt", "r", encoding="utf-16") as file:
+    with open(symbols_file, "r") as file:
+        reader = csv.reader(file)
+        next(reader)
         for line in file:
             symbols.append(line.strip())
     return symbols
