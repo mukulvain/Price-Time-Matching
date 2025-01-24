@@ -1,8 +1,10 @@
-from Order import Order
-from Trade import Trade
 import csv
 
+from Order import Order
+from Trade import Trade
+
 order_repository = {}
+symbols_file = "NSE500_2019.csv"
 
 
 class AlphaNumeric:
@@ -73,33 +75,11 @@ def to_trade(line):
     return Trade(*trade_args)
 
 
-orders_file = "CASH_Orders_20082019.DAT"
-trades_file = "CASH_Trades_20082019.DAT"
-symbols_file = "NSE500_2019.csv"
-
-
 def line_reader(file_path):
     with open(file_path, "r") as file:
         for line in file:
             yield line.strip()
 
-
-order_reader = line_reader(orders_file)
-trade_reader = line_reader(trades_file)
-
-
-def get_trade():
-    try:
-        return to_trade(next(trade_reader))
-    except StopIteration:
-        return None
-
-
-def get_order():
-    try:
-        return to_order(next(order_reader))
-    except StopIteration:
-        return None
 
 def get_symbols():
     symbols = []

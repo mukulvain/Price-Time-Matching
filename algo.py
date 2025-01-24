@@ -1,12 +1,34 @@
-from Ticker import Ticker
-from reader import order_repository, get_order, get_trade, get_symbols
+import sys
 import time
+
+from reader import get_symbols, line_reader, order_repository, to_order, to_trade
+from Ticker import Ticker
+
+orders_file = sys.argv[1]
+trades_file = sys.argv[2]
+
+order_reader = line_reader(orders_file)
+trade_reader = line_reader(trades_file)
 
 
 symbols = get_symbols()
 tickers = {}
 for symbol in symbols:
     tickers[symbol] = Ticker(symbol)
+
+
+def get_trade():
+    try:
+        return to_trade(next(trade_reader))
+    except StopIteration:
+        return None
+
+
+def get_order():
+    try:
+        return to_order(next(order_reader))
+    except StopIteration:
+        return None
 
 
 start = time.time()
