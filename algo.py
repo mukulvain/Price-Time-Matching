@@ -13,10 +13,10 @@ start = time.time()
 order = get_order()
 while True:
     trade = get_trade()
-    if trade.symbol not in symbols:
-        continue
     if trade is None:
         break
+    if trade.symbol not in symbols:
+        continue
     while order and order.order_time < trade.trade_time:
         if order.symbol not in symbols:
             order = get_order()
