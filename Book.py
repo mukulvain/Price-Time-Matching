@@ -1,19 +1,22 @@
+import numpy as np
+from sortedcontainers import SortedDict
+
 from reader import order_repository
 
 
 class Book:
     def __init__(self, buy=True):
         self.buy = buy
-        self.queue = dict()
+        self.queue = SortedDict()
         self.orders = {}
         self.stop_loss_orders = {}
 
-    # Updates the best price of the queue
+    # Fetches the best price of the queue
     def fetch_price(self):
         if self.buy:
-            self.current_price = self.queue.peekitem()[0]
+            return self.queue.peekitem()[0]
         else:
-            self.current_price = self.queue.peekitem(0)[0]
+            return self.queue.peekitem(0)[0]
 
     def add(self, order):
         # Adds order to stop loss queue
@@ -55,3 +58,60 @@ class Book:
                     break
             if not len(self.queue[price]):
                 del self.queue[price]
+
+    def fetch_data(self, top):
+
+        volumes_original = np.full((len(top) + 1, 2, 3), 0)
+        volumes_disclosed = np.full((len(top) + 1, 2, 3), 0)
+        if self.buy:
+            idx = 0
+            prices = np.full((2, 3), 0)
+            keys = list(self.queue.keys())
+            keys.reverse()
+            for key in keys:
+                for order in self.queue[key]:
+                    for i in range(len(top)):
+                        if idx < top[i]:
+                            volumes_original[i][order.algo][
+                                order.client - 1
+                            ] += order.volume_original
+                            volumes_disclosed[i][order.algo][order.client - 1] += min(
+                                order.volume_disclosed, order.volume_original
+                            )
+                    volumes_original[-1][order.algo][
+                        order.client - 1
+                    ] += order.volume_original
+                    volumes_disclosed[-1][order.algo][order.client - 1] += min(
+                        order.volume_disclosed, order.volume_original
+                    )
+                    prices[order.algo][order.client - 1] = max(
+                        order.limit_price, prices[order.algo][order.client - 1]
+                    )
+                idx += 1
+        else:
+            idx = 0
+            prices = np.full((2, 3), np.inf)
+            for key in self.queue.keys():
+                for order in self.queue[key]:
+                    for i in range(len(top)):
+                        if idx < top[i]:
+                            volumes_original[i][order.algo][
+                                order.client - 1
+                            ] += order.volume_original
+                            volumes_disclosed[i][order.algo][order.client - 1] += min(
+                                order.volume_disclosed, order.volume_original
+                            )
+                    volumes_original[-1][order.algo][
+                        order.client - 1
+                    ] += order.volume_original
+                    volumes_disclosed[-1][order.algo][order.client - 1] += min(
+                        order.volume_disclosed, order.volume_original
+                    )
+                    prices[order.algo][order.client - 1] = min(
+                        order.limit_price, prices[order.algo][order.client - 1]
+                    )
+                idx += 1
+        return (
+            np.concatenate((volumes_original.flatten(), volumes_disclosed.flatten())),
+            prices.flatten(),
+        )

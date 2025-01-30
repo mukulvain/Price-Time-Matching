@@ -28,14 +28,16 @@ class Order:
         self.activity_type = self.activities[activity_type]
         self.symbol = symbol
         self.series = series
-        self.volume_disclosed = volume_disclosed
+        self.volume_disclosed = (
+            volume_disclosed if volume_disclosed else volume_original
+        )
         self.volume_original = volume_original
         self.limit_price = limit_price
         self.trigger_price = trigger_price
         self.is_market_order = is_market_order == "Y"
         self.is_stop_loss = is_stop_loss == "Y"
         self.is_ioc = is_ioc == "Y"
-        self.algo = algo
+        self.algo = algo % 2
         self.client = client
 
     def __repr__(self):

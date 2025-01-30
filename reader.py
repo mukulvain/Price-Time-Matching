@@ -1,4 +1,5 @@
 import csv
+from datetime import datetime, timedelta
 
 from Order import Order
 from Trade import Trade
@@ -35,8 +36,8 @@ order = [
     AlphaNumeric(1),
     AlphaNumeric(1),
     AlphaNumeric(1),
-    AlphaNumeric(1),
-    AlphaNumeric(1),
+    Numeric(1),
+    Numeric(1),
 ]
 
 trade = [
@@ -89,3 +90,31 @@ def get_symbols():
         for line in file:
             symbols.append(line.strip())
     return symbols
+
+
+def get_trade(trade_reader):
+    try:
+        return to_trade(next(trade_reader))
+    except StopIteration:
+        return None
+
+
+def get_order(order_reader):
+    try:
+        return to_order(next(order_reader))
+    except StopIteration:
+        return None
+
+
+def clock_time(jiffies):
+    epoch = datetime(1980, 1, 1)
+    seconds = jiffies / 65536
+    timestamp = epoch + timedelta(seconds=seconds)
+    return timestamp.time()
+
+
+def add_time(timestamp, interval):
+    datetimestamp = datetime.combine(datetime.today(), timestamp) + timedelta(
+        seconds=interval
+    )
+    return datetimestamp.time()
