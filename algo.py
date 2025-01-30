@@ -58,7 +58,6 @@ while True:
         write_line(tickers, period)
         period += 1
         threshold = add_time(threshold, INTERVAL)
-        break
 
     if trade.symbol not in symbols:
         continue
