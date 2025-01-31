@@ -25,7 +25,7 @@ INTERVAL = 300
 symbols = get_symbols()
 tickers = {}
 for symbol in symbols:
-    tickers[symbol] = Ticker(symbol)
+    tickers[symbol] = Ticker(symbol, add_time(MARKET_OPENS, INTERVAL), 1)
 
 
 def add_order(stock, order):
@@ -43,24 +43,23 @@ def delete_order(stock, order):
 
 
 start = tm.time()
-
-threshold = add_time(MARKET_OPENS, INTERVAL)
 order = get_order(order_reader)
-period = 0
 while True:
     trade = get_trade(trade_reader)
     if trade is None:
-        write_line(tickers, period)
+        for stock in tickers:
+            write_line(stock)
         break
-
-    converted_time = clock_time(trade.trade_time)
-    if converted_time > threshold:
-        write_line(tickers, period)
-        period += 1
-        threshold = add_time(threshold, INTERVAL)
 
     if trade.symbol not in symbols:
         continue
+
+    converted_time = clock_time(trade.trade_time)
+    stock = tickers[trade.symbol]
+    if converted_time > stock.threshold:
+        write_line(stock)
+        stock.period += 1
+        stock.threshold = add_time(stock.threshold, INTERVAL)
 
     while order and order.order_time < trade.trade_time:
         if order.symbol not in symbols:
