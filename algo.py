@@ -16,11 +16,12 @@ from writer import write_line
 
 orders_file = sys.argv[1]
 trades_file = sys.argv[2]
+output_file = sys.argv[3]
+INTERVAL = int(sys.argv[4])
 order_reader = line_reader(orders_file)
 trade_reader = line_reader(trades_file)
 
 MARKET_OPENS = time(9, 15, 0)
-INTERVAL = 300
 
 symbols = get_symbols()
 tickers = {}
@@ -44,24 +45,30 @@ def delete_order(stock, order):
 
 start = tm.time()
 order = get_order(order_reader)
+trade = None
 while True:
+    previous_trade = trade
     trade = get_trade(trade_reader)
+    if previous_trade and trade.trade_time < previous_trade.trade_time:
+        while order.order_time > previous_order.order_time:
+            previous_order = order
+            order = get_order(order_reader)
     if trade is None:
         for ticker in tickers.keys():
-            write_line(tickers[ticker])
+            write_line(tickers[ticker], output_file)
         break
-
     if trade.symbol not in symbols:
         continue
 
     converted_time = clock_time(trade.trade_time)
     stock = tickers[trade.symbol]
-    if converted_time > stock.threshold:
-        write_line(stock)
+    while converted_time > stock.threshold:
+        write_line(stock, output_file)
         stock.period += 1
         stock.threshold = add_time(stock.threshold, INTERVAL)
 
     while order and order.order_time < trade.trade_time:
+        previous_order = order
         if order.symbol not in symbols:
             order = get_order(order_reader)
             continue

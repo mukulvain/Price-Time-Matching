@@ -3,8 +3,8 @@ import csv
 import numpy as np
 
 
-def write_line(stock):
-    try:
+def write_line(stock, filename):
+    if bool(stock.buy_book.queue) and bool(stock.sell_book.queue):
         bid_volumes, bid_prices = stock.buy_book.fetch_data([1, 3, 5, 10])
         best_bid = stock.buy_book.fetch_price()
         ask_volumes, ask_prices = stock.sell_book.fetch_data([1, 3, 5, 10])
@@ -25,8 +25,8 @@ def write_line(stock):
         row = row.astype(int)
         row = np.hstack((row, [stock.code]))
 
-        with open("output.csv", mode="a", newline="") as file:
+        with open(filename, mode="a", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(row)
-    except:
-        pass
+    else:
+        print(stock.code)
