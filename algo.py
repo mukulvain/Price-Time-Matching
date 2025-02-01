@@ -47,8 +47,8 @@ order = get_order(order_reader)
 while True:
     trade = get_trade(trade_reader)
     if trade is None:
-        for stock in tickers:
-            write_line(stock)
+        for ticker in tickers.keys():
+            write_line(tickers[ticker])
         break
 
     if trade.symbol not in symbols:
