@@ -1,80 +1,106 @@
-from Queue import Queue
-from reader_rem import order_repository, orders, trade_price, trades
+import sys
+import time as tm
+from datetime import time
 
-MARKET_OPENS_AT = 9.25
+from reader import (
+    add_time,
+    clock_time,
+    get_order,
+    get_symbols,
+    get_trade,
+    line_reader,
+    order_repository,
+)
+from Ticker import Ticker
+from writer import write_line
+
+orders_file = sys.argv[1]
+trades_file = sys.argv[2]
+output_file = sys.argv[3]
+INTERVAL = int(sys.argv[4])
+order_reader = line_reader(orders_file)
+trade_reader = line_reader(trades_file)
+
+MARKET_OPENS = time(9, 15, 0)
+
+symbols = get_symbols()
+tickers = {}
+for symbol in symbols:
+    tickers[symbol] = Ticker(symbol, add_time(MARKET_OPENS, INTERVAL), 1)
 
 
-sell_book = Queue(False)
-buy_book = Queue(True)
+def add_order(stock, order):
+    if order.is_buy:
+        stock.buy_book.add(order)
+    else:
+        stock.sell_book.add(order)
 
-idx = 0
-for order in orders:
-    idx += 1
-    order_number = order.order_number
-    if order.order_time > MARKET_OPENS_AT:
+
+def delete_order(stock, order):
+    if order.is_buy:
+        stock.buy_book.delete(order.order_number, order.is_stop_loss)
+    else:
+        stock.sell_book.delete(order.order_number, order.is_stop_loss)
+
+
+start = tm.time()
+order = get_order(order_reader)
+trade = None
+while True:
+    previous_trade = trade
+    trade = get_trade(trade_reader)
+    if trade is None:
+        for ticker in tickers.keys():
+            write_line(tickers[ticker], output_file)
         break
-    if order_number in order_repository:
-        # Removes order
-        if order.activity_type == "CANCEL":
-            if order.is_buy:
-                buy_book.remove_PO(order_number)
-            else:
-                sell_book.remove_PO(order_number)
-            continue
-
-        # Removes order
-        elif order.activity_type == "MODIFY":
-            previous_order = order_repository[order_number]
-            if previous_order.is_buy:
-                buy_book.remove_PO(order_number)
-            else:
-                sell_book.remove_PO(order_number)
-
-    # Adds order
-    if order.is_market_order:
+    if previous_trade and trade.trade_time < previous_trade.trade_time:
+        while order.order_time > previous_order.order_time:
+            previous_order = order
+            order = get_order(order_reader)
+    if trade.symbol not in symbols:
         continue
 
-    if order.is_buy:
-        buy_book.add_PO(order)
-    else:
-        sell_book.add_PO(order)
-    order_repository[order_number] = order
+    converted_time = clock_time(trade.trade_time)
+    stock = tickers[trade.symbol]
+    while converted_time > stock.threshold:
+        write_line(stock, output_file)
+        stock.period += 1
+        stock.threshold = add_time(stock.threshold, INTERVAL)
 
+    while order and order.order_time < trade.trade_time:
+        previous_order = order
+        if order.symbol not in symbols:
+            order = get_order(order_reader)
+            continue
+        stock = tickers[order.symbol]
+        order_number = order.order_number
+        if order_number in order_repository:
+            previous_order = order_repository[order_number]
 
-for trade in trades:
-    if trade.trade_time > MARKET_OPENS_AT:
-        break
+            if order.activity_type == "CANCEL":
+                delete_order(stock, previous_order)
+                order = get_order(order_reader)
+                continue
+
+            elif order.activity_type == "MODIFY":
+                delete_order(stock, previous_order)
+
+        if not order.is_stop_loss and (order.is_market_order or order.is_ioc):
+            order = get_order(order_reader)
+            continue
+
+        # Adds order
+        add_order(stock, order)
+        order_repository[order_number] = order
+        order = get_order(order_reader)
+
     volume = trade.trade_quantity
     buyer = trade.buy_order_number
     seller = trade.sell_order_number
+    stock = tickers[trade.symbol]
+    stock.buy_book.delete(buyer, False, volume)
+    stock.sell_book.delete(seller, False, volume)
 
-    buy_book.remove_PO(buyer, volume)
-    sell_book.remove_PO(seller, volume)
-
-buy_book.fetch_price()
-sell_book.fetch_price()
-
-for order in orders[idx - 1 :]:
-    order_number = order.order_number
-    # Removes order
-    if order.activity_type == "CANCEL":
-        if order.is_buy:
-            buy_book.delete(order_number, order.is_stop_loss)
-        else:
-            sell_book.delete(order_number, order.is_stop_loss)
-        continue
-
-    # Removes order
-    elif order.activity_type == "MODIFY":
-        previous_order = order_repository[order_number]
-        if previous_order.is_buy:
-            buy_book.delete(order.order_number, previous_order.is_stop_loss)
-        else:
-            sell_book.delete(order.order_number, previous_order.is_stop_loss)
-
-    # Adds order
-    order_repository[order_number] = order
-    if order.is_buy:
-        buy_book.execute(order, sell_book)
-    else:
-        sell_book.execute(order, buy_book)
+end = tm.time()
+elapsed_time = end - start
+print(f"Elapsed time: {elapsed_time:.6f} seconds")
