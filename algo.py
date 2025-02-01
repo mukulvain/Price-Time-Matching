@@ -49,14 +49,14 @@ trade = None
 while True:
     previous_trade = trade
     trade = get_trade(trade_reader)
-    if previous_trade and trade.trade_time < previous_trade.trade_time:
-        while order.order_time > previous_order.order_time:
-            previous_order = order
-            order = get_order(order_reader)
     if trade is None:
         for ticker in tickers.keys():
             write_line(tickers[ticker], output_file)
         break
+    if previous_trade and trade.trade_time < previous_trade.trade_time:
+        while order.order_time > previous_order.order_time:
+            previous_order = order
+            order = get_order(order_reader)
     if trade.symbol not in symbols:
         continue
 
