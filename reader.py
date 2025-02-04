@@ -1,4 +1,5 @@
 import csv
+import gzip
 from datetime import datetime, timedelta
 
 from Order import Order
@@ -77,7 +78,7 @@ def to_trade(line):
 
 
 def line_reader(file_path):
-    with open(file_path, "r") as file:
+    with gzip.open(file_path, "rt") as file:
         for line in file:
             yield line.strip()
 

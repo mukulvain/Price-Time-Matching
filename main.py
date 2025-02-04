@@ -12,12 +12,15 @@ from reader import (
     order_repository,
 )
 from Ticker import Ticker
-from writer import write_line
+from writer import write_header, write_line
 
-orders_file = sys.argv[1]
-trades_file = sys.argv[2]
-output_file = sys.argv[3]
-INTERVAL = int(sys.argv[4])
+date = sys.argv[1]
+INTERVAL = int(sys.argv[2])
+orders_file = f"Orders/CASH_Orders_{date}.DAT.gz"
+trades_file = f"Trades/CASH_Trades_{date}.DAT.gz"
+output_file = f"LOB/LOB_{date}.csv"
+
+write_header(output_file)
 order_reader = line_reader(orders_file)
 trade_reader = line_reader(trades_file)
 
@@ -51,7 +54,7 @@ while True:
     trade = get_trade(trade_reader)
     if trade is None:
         for ticker in tickers.keys():
-            write_line(tickers[ticker], output_file)
+            write_line(tickers[ticker], date, output_file)
         break
     if previous_trade and trade.trade_time < previous_trade.trade_time:
         while order.order_time > previous_order.order_time:
@@ -63,7 +66,7 @@ while True:
     converted_time = clock_time(trade.trade_time)
     stock = tickers[trade.symbol]
     while converted_time > stock.threshold:
-        write_line(stock, output_file)
+        write_line(stock, date, output_file)
         stock.period += 1
         stock.threshold = add_time(stock.threshold, INTERVAL)
 

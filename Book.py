@@ -60,9 +60,16 @@ class Book:
                 del self.queue[price]
 
     def fetch_data(self, top):
+        # Assumption: Client & Algo Category prices for non-top orders are not required.
 
-        volumes_original = np.full((len(top) + 1, 2, 3), 0)
-        volumes_disclosed = np.full((len(top) + 1, 2, 3), 0)
+        # Comment the following for details on all orders
+        volumes_original = np.full((len(top), 2, 3), 0)
+        volumes_disclosed = np.full((len(top), 2, 3), 0)
+
+        # Uncomment the following for details on all orders
+        # volumes_original = np.full((len(top), 2, 3), 0)
+        # volumes_disclosed = np.full((len(top), 2, 3), 0)
+
         if self.buy:
             idx = 0
             prices = np.full((2, 3), 0)
@@ -78,16 +85,19 @@ class Book:
                             volumes_disclosed[i][order.algo][order.client - 1] += min(
                                 order.volume_disclosed, order.volume_original
                             )
-                    volumes_original[-1][order.algo][
-                        order.client - 1
-                    ] += order.volume_original
-                    volumes_disclosed[-1][order.algo][order.client - 1] += min(
-                        order.volume_disclosed, order.volume_original
-                    )
+                    # Uncomment the following for details on all orders
+                    # volumes_original[-1][order.algo][
+                    #     order.client - 1
+                    # ] += order.volume_original
+                    # volumes_disclosed[-1][order.algo][order.client - 1] += min(
+                    #     order.volume_disclosed, order.volume_original
+                    # )
                     prices[order.algo][order.client - 1] = max(
                         order.limit_price, prices[order.algo][order.client - 1]
                     )
                 idx += 1
+                if idx >= top[-1]:
+                    break
         else:
             idx = 0
             prices = np.full((2, 3), np.inf)
@@ -101,16 +111,19 @@ class Book:
                             volumes_disclosed[i][order.algo][order.client - 1] += min(
                                 order.volume_disclosed, order.volume_original
                             )
-                    volumes_original[-1][order.algo][
-                        order.client - 1
-                    ] += order.volume_original
-                    volumes_disclosed[-1][order.algo][order.client - 1] += min(
-                        order.volume_disclosed, order.volume_original
-                    )
+                    # Uncomment the following for details on all orders
+                    # volumes_original[-1][order.algo][
+                    #     order.client - 1
+                    # ] += order.volume_original
+                    # volumes_disclosed[-1][order.algo][order.client - 1] += min(
+                    #     order.volume_disclosed, order.volume_original
+                    # )
                     prices[order.algo][order.client - 1] = min(
                         order.limit_price, prices[order.algo][order.client - 1]
                     )
                 idx += 1
+                if idx >= top[-1]:
+                    break
         return (
             np.concatenate((volumes_original.flatten(), volumes_disclosed.flatten())),
             prices.flatten(),
