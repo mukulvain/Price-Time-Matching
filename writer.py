@@ -9,7 +9,7 @@ def write_header(filename):
     clients = ["C", "P", "R"]
     is_algo = ["A", "NA"]
     is_buy = ["Bid", "Ask"]
-    volumes = ["Q", "AQ"]
+    volumes = ["Q"]
     header_list = []
     for buy in is_buy:
         for volume in volumes:
@@ -31,7 +31,7 @@ def write_header(filename):
         csv.DictWriter(file, delimiter=",", fieldnames=header_list).writeheader()
 
 
-def write_line(stock, date, filename):
+def write_line(stock, period, date, filename):
     if bool(stock.buy_book.queue) and bool(stock.sell_book.queue):
         bid_volumes, bid_prices = stock.buy_book.fetch_data(DATA_POINTS)
         best_bid = stock.buy_book.fetch_price()
@@ -46,7 +46,7 @@ def write_line(stock, date, filename):
                 ask_volumes,
                 [best_ask],
                 ask_prices,
-                [spread, stock.period],
+                [spread, period],
             )
         )
         row = np.where(np.isinf(row), 0, row)
@@ -58,6 +58,3 @@ def write_line(stock, date, filename):
             writer.writerow(row)
     else:
         print(stock.code)
-
-
-write_header("output.csv")

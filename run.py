@@ -2,7 +2,16 @@ import multiprocessing
 import subprocess
 import sys
 
-dates = []
+dates = [
+    "01042015",
+    "02042015",
+    "03042015",
+    "04042015",
+    "05042015",
+    "06042015",
+    "07042015",
+    "08042015",
+]
 commands = []
 INTERVAL = sys.argv[1]
 for date in dates:

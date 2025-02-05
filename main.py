@@ -29,7 +29,7 @@ MARKET_OPENS = time(9, 15, 0)
 symbols = get_symbols()
 tickers = {}
 for symbol in symbols:
-    tickers[symbol] = Ticker(symbol, add_time(MARKET_OPENS, INTERVAL), 1)
+    tickers[symbol] = Ticker(symbol)
 
 
 def add_order(stock, order):
@@ -49,6 +49,9 @@ def delete_order(stock, order):
 start = tm.time()
 order = get_order(order_reader)
 trade = None
+threshold = MARKET_OPENS
+period = 0
+stocks = set()
 while True:
     previous_trade = trade
     trade = get_trade(trade_reader)
@@ -57,45 +60,59 @@ while True:
             write_line(tickers[ticker], date, output_file)
         break
     if previous_trade and trade.trade_time < previous_trade.trade_time:
+        stocks = set()
+        period = 0
+        threshold = MARKET_OPENS
         while order.order_time > previous_order.order_time:
             previous_order = order
             order = get_order(order_reader)
     if trade.symbol not in symbols:
         continue
-
+    stocks.add(trade.symbol)
     converted_time = clock_time(trade.trade_time)
     stock = tickers[trade.symbol]
-    while converted_time > stock.threshold:
-        write_line(stock, date, output_file)
-        stock.period += 1
-        stock.threshold = add_time(stock.threshold, INTERVAL)
 
     while order and order.order_time < trade.trade_time:
-        previous_order = order
-        if order.symbol not in symbols:
-            order = get_order(order_reader)
-            continue
-        stock = tickers[order.symbol]
-        order_number = order.order_number
-        if order_number in order_repository:
-            previous_order = order_repository[order_number]
+        min_time = min(converted_time, threshold)
+        while order and clock_time(order.order_time) < min_time:
+            previous_order = order
+            if (
+                order.symbol not in symbols
+                or order.series != "EQ"
+                or order.segment != "CASH"
+            ):
+                order = get_order(order_reader)
+                continue
+            stock = tickers[order.symbol]
+            order_number = order.order_number
+            if order_number in order_repository:
+                previous_order = order_repository[order_number]
 
-            if order.activity_type == "CANCEL":
-                delete_order(stock, previous_order)
+                if order.activity_type == "CANCEL":
+                    if order.is_buy:
+                        stock.buy_book.delete(order.order_number, order.is_stop_loss)
+                    else:
+                        stock.sell_book.delete(order.order_number, order.is_stop_loss)
+                    order = get_order(order_reader)
+                    continue
+
+                elif order.activity_type == "MODIFY":
+                    delete_order(stock, previous_order)
+
+            if not order.is_stop_loss and (order.is_market_order or order.is_ioc):
                 order = get_order(order_reader)
                 continue
 
-            elif order.activity_type == "MODIFY":
-                delete_order(stock, previous_order)
-
-        if not order.is_stop_loss and (order.is_market_order or order.is_ioc):
+            # Adds order
+            add_order(stock, order)
+            order_repository[order_number] = order
             order = get_order(order_reader)
-            continue
 
-        # Adds order
-        add_order(stock, order)
-        order_repository[order_number] = order
-        order = get_order(order_reader)
+        if min_time != converted_time:
+            for _ in stocks:
+                write_line(tickers[_], period, date, output_file)
+            period += 1
+            threshold = add_time(threshold, INTERVAL)
 
     volume = trade.trade_quantity
     buyer = trade.buy_order_number
