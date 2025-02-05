@@ -15,7 +15,7 @@ dates = [
 commands = []
 INTERVAL = sys.argv[1]
 for date in dates:
-    commands.append[f"python3 main.py {date} {INTERVAL}"]
+    commands.append(f"python3 main.py {date} {INTERVAL}")
 
 
 def run_command(cmd):
