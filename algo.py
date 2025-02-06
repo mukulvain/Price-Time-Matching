@@ -7,7 +7,6 @@ from Ticker import Ticker
 from writer import write_header, write_line
 
 date = sys.argv[1]
-INTERVAL = int(sys.argv[2])
 orders_file = f"Orders/CASH_Orders_{date}.DAT.gz"
 trades_file = f"Trades/CASH_Trades_{date}.DAT.gz"
 output_file = f"LOB/LOB_{date}.csv"
@@ -56,7 +55,6 @@ while True:
         continue
 
     stock = tickers[trade.symbol]
-    stock.period = trade.trade_time
     write_line(stock, date, output_file)
 
     while order and order.order_time < trade.trade_time:
@@ -68,6 +66,7 @@ while True:
         ):
             order = get_order(order_reader)
             continue
+        stock = tickers[order.symbol]
         order_number = order.order_number
         if order_number in order_repository:
             previous_order = order_repository[order_number]

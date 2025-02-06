@@ -83,6 +83,7 @@ while True:
             ):
                 order = get_order(order_reader)
                 continue
+            stock = tickers[order.symbol]
             order_number = order.order_number
             if order_number in order_repository:
                 previous_order = order_repository[order_number]
