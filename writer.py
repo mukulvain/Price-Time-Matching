@@ -5,11 +5,11 @@ import numpy as np
 DATA_POINTS = [1, 5]
 
 
-def write_header(filename):
+def write_header(filename, period=True):
     clients = ["C", "P", "R"]
     is_algo = ["A", "NA"]
     is_buy = ["Bid", "Ask"]
-    volumes = ["Q"]
+    volumes = ["Q", "AQ"]
     header_list = []
     for buy in is_buy:
         for volume in volumes:
@@ -24,20 +24,25 @@ def write_header(filename):
             for client in clients:
                 header_list.append(client + algo + "_best_" + buy)
     header_list.append("spread")
-    header_list.append("period")
+    if period:
+        header_list.append("period")
     header_list.append("date")
     header_list.append("symbol")
     with open(filename, mode="w", newline="") as file:
         csv.DictWriter(file, delimiter=",", fieldnames=header_list).writeheader()
 
 
-def write_line(stock, period, date, filename):
+def write_line(stock, date, filename, period=-1):
     if bool(stock.buy_book.queue) and bool(stock.sell_book.queue):
         bid_volumes, bid_prices = stock.buy_book.fetch_data(DATA_POINTS)
         best_bid = stock.buy_book.fetch_price()
         ask_volumes, ask_prices = stock.sell_book.fetch_data(DATA_POINTS)
         best_ask = stock.sell_book.fetch_price()
         spread = best_ask - best_bid
+        if period == -1:
+            element = [spread]
+        else:
+            element = [spread, period]
         row = np.hstack(
             (
                 bid_volumes,
@@ -46,7 +51,7 @@ def write_line(stock, period, date, filename):
                 ask_volumes,
                 [best_ask],
                 ask_prices,
-                [spread, period],
+                element,
             )
         )
         row = np.where(np.isinf(row), 0, row)

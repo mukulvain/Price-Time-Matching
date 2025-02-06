@@ -11,11 +11,12 @@ dates = [
     "06042015",
     "07042015",
     "08042015",
+    "09042015",
 ]
 commands = []
 INTERVAL = sys.argv[1]
 for date in dates:
-    commands.append(f"python3 main.py {date} {INTERVAL}")
+    commands.append(f"python main.py {date} {INTERVAL}")
 
 
 def run_command(cmd):

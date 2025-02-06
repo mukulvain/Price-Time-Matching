@@ -56,8 +56,8 @@ while True:
     previous_trade = trade
     trade = get_trade(trade_reader)
     if trade is None:
-        for ticker in tickers.keys():
-            write_line(tickers[ticker], date, output_file)
+        for _ in stocks:
+            write_line(tickers[_], date, output_file, period)
         break
     if previous_trade and trade.trade_time < previous_trade.trade_time:
         stocks = set()
@@ -83,16 +83,12 @@ while True:
             ):
                 order = get_order(order_reader)
                 continue
-            stock = tickers[order.symbol]
             order_number = order.order_number
             if order_number in order_repository:
                 previous_order = order_repository[order_number]
 
                 if order.activity_type == "CANCEL":
-                    if order.is_buy:
-                        stock.buy_book.delete(order.order_number, order.is_stop_loss)
-                    else:
-                        stock.sell_book.delete(order.order_number, order.is_stop_loss)
+                    delete_order(stock, previous_order)
                     order = get_order(order_reader)
                     continue
 
@@ -110,14 +106,13 @@ while True:
 
         if min_time != converted_time:
             for _ in stocks:
-                write_line(tickers[_], period, date, output_file)
+                write_line(tickers[_], date, output_file, period)
             period += 1
             threshold = add_time(threshold, INTERVAL)
 
     volume = trade.trade_quantity
     buyer = trade.buy_order_number
     seller = trade.sell_order_number
-    stock = tickers[trade.symbol]
     stock.buy_book.delete(buyer, False, volume)
     stock.sell_book.delete(seller, False, volume)
 
