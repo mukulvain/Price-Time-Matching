@@ -20,6 +20,7 @@ orders_file = f"Orders/CASH_Orders_{date}.DAT.gz"
 trades_file = f"Trades/CASH_Trades_{date}.DAT.gz"
 output_file = f"LOB/LOB_{date}.csv"
 
+
 write_header(output_file)
 order_reader = line_reader(orders_file)
 trade_reader = line_reader(trades_file)
@@ -46,26 +47,19 @@ def delete_order(stock, order):
         stock.sell_book.delete(order.order_number, order.is_stop_loss)
 
 
-start = tm.time()
-order = get_order(order_reader)
 trade = None
 threshold = MARKET_OPENS
 period = 0
+
+start = tm.time()
 stocks = set()
+order = get_order(order_reader)
 while True:
-    previous_trade = trade
     trade = get_trade(trade_reader)
     if trade is None:
         for _ in stocks:
             write_line(tickers[_], date, output_file, period)
         break
-    if previous_trade and trade.trade_time < previous_trade.trade_time:
-        stocks = set()
-        period = 0
-        threshold = MARKET_OPENS
-        while order.order_time > previous_order.order_time:
-            previous_order = order
-            order = get_order(order_reader)
     if trade.symbol not in symbols:
         continue
     stocks.add(trade.symbol)
