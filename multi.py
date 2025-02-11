@@ -12,15 +12,20 @@ INTERVAL = sys.argv[1]
 
 
 def consumer(date):
-    os.system(f"python main.py {date} {INTERVAL}")
+    interpreter = os.path.basename(sys.executable)
+    os.system(f"{interpreter} main.py {date} {INTERVAL}")
 
 
 def producer(dates, queue):
     for date in dates:
         orders_file = f"Orders/CASH_Orders_{date}.DAT.gz"
         trades_file = f"Trades/CASH_Trades_{date}.DAT.gz"
-        os.system(f"./gzip_sort {orders_file}")
-        os.system(f"./gzip_sort {trades_file}")
+        if os.name == "nt":
+            os.system(f".\gzip_sort.exe {orders_file}")
+            os.system(f".\gzip_sort.exe {trades_file}")
+        else:
+            os.system(f"./gzip_sort {orders_file}")
+            os.system(f"./gzip_sort {trades_file}")
         queue.put(date)
 
 
