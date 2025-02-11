@@ -80,6 +80,8 @@ def to_trade(line):
 def line_reader(file_path):
     with gzip.open(file_path, "rt") as file:
         for line in file:
+            # if "CHENNPETRO" in line:
+                # print(line)
             yield line.strip()
 
 

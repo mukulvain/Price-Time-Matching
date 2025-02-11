@@ -64,7 +64,7 @@ while True:
         continue
     stocks.add(trade.symbol)
     converted_time = clock_time(trade.trade_time)
-    stock = tickers[trade.symbol]
+    ticker = tickers[trade.symbol]
 
     while order and order.order_time < trade.trade_time:
         min_time = min(converted_time, threshold)
@@ -108,8 +108,8 @@ while True:
     volume = trade.trade_quantity
     buyer = trade.buy_order_number
     seller = trade.sell_order_number
-    stock.buy_book.delete(buyer, False, volume)
-    stock.sell_book.delete(seller, False, volume)
+    ticker.buy_book.delete(buyer, False, volume)
+    ticker.sell_book.delete(seller, False, volume)
 
 end = tm.time()
 elapsed_time = end - start
