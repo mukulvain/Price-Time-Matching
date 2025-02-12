@@ -21,8 +21,8 @@ def producer(dates, queue):
         orders_file = f"Orders/CASH_Orders_{date}.DAT.gz"
         trades_file = f"Trades/CASH_Trades_{date}.DAT.gz"
         if os.name == "nt":
-            os.system(f".\gzip_sort.exe {orders_file}")
-            os.system(f".\gzip_sort.exe {trades_file}")
+            os.system(f".\\gzip_sort.exe {orders_file}")
+            os.system(f".\\gzip_sort.exe {trades_file}")
         else:
             os.system(f"./gzip_sort {orders_file}")
             os.system(f"./gzip_sort {trades_file}")
