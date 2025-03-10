@@ -4,12 +4,21 @@
 #include <string>
 #include <algorithm>
 #include <zlib.h>
+#include <csignal>
+#include <cstdlib>
 
 #define START 22
 #define END 36
 #define MAX_LINE_LENGTH 128
 
 using namespace std;
+
+const char *inputFile = nullptr;
+void signalHandler(int signum)
+{
+    cerr << inputFile << " was killed by signal " << signum << "\n";
+    exit(signum);
+}
 
 struct LineEntry
 {
@@ -49,6 +58,13 @@ void preprocess(const string &filename)
 
 int main(int argc, char *argv[])
 {
+    inputFile = argv[1];
+
+    signal(SIGTERM, signalHandler);
+    signal(SIGSEGV, signalHandler);
+    signal(SIGABRT, signalHandler);
+
     preprocess(argv[1]);
+    cout << "File sorted: " << argv[1] << "\n";
     return EXIT_SUCCESS;
 }

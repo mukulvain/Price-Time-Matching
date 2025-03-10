@@ -61,5 +61,3 @@ def write_line(stock, date, filename, period=-1):
         with open(filename, mode="a", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(row)
-    else:
-        print(stock.code)
